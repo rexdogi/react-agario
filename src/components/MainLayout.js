@@ -17,8 +17,8 @@ export default class MainLayout extends Component {
 
   ball = () => {
     return {
-      x: 100,
-      y: 100,
+      x: 4000,
+      y: 4000,
       dx: 0,
       dy: 0,
       radius: 25,
@@ -71,14 +71,14 @@ export default class MainLayout extends Component {
     let dy = 0;
     console.log(this.state.ball.y + ' ' + e.pageY)
     if(e.pageX > this.state.ball.x) {
-      dx = 3;
+      dx = 10;
     } else {
-      dx = -3;
+      dx = -1;
     }
     if(e.pageY > this.state.ball.y) {
-      dy = 3;
+      dy = 10;
     } else {
-      dy = -3;
+      dy = -10;
     }
     console.log(dx + ' ' + dy)
     let newState = {...this.state.ball, dx: dx, dy: dy}
@@ -88,11 +88,20 @@ export default class MainLayout extends Component {
 
   draw(ctx) {
     this.clear(ctx);
-    let newState = {...this.state.ball, x: this.state.ball.x + this.state.ball.dx, y: this.state.ball.y + this.state.ball.dy};
+    let posX, posY = 0;
+    if((this.state.ball.x + this.state.ball.dx) <= this.state.width - 1000 && this.state.ball.x + this.state.ball.dx >= 1000) {
+      posX = this.state.ball.x + this.state.ball.dx
+    } else {
+      posX = this.state.ball.x;
+    }
+
+    if((this.state.ball.y + this.state.ball.dy) <= this.state.height - 1000 && this.state.ball.y + this.state.ball.dy >= 1000) {
+      posY = this.state.ball.y + this.state.ball.dy
+    } else {
+      posY = this.state.ball.y;
+    }
+    let newState = {...this.state.ball, x: posX, y: posY};
     this.setState({ball: newState})
-    //this.drawBackGround(ctx)
-/*    window.scrollTo(this.state.ball.x, this.state.ball.y)
-    this.state.ball.draw(ctx, this.state.ball.x + window.innerWidth / 2, this.state.ball.y + window.innerHeight / 2);*/
     window.scrollTo(this.state.ball.x - window.innerWidth / 2, this.state.ball.y - window.innerHeight / 2)
     this.state.ball.draw(ctx, this.state.ball.x, this.state.ball.y);
   }
