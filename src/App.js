@@ -8,17 +8,6 @@ class App extends Component {
 
   constructor() {
     super()
-    this.state = {
-      objects: [this.ball(500, 500, true, 30)]
-    }
-  }
-
-  componentDidMount() {
-    setInterval(() => {
-      let newState = this.state.objects;
-      newState.push(this.ball(this.randomIntFromInterval(300, 11000 - 300), this.randomIntFromInterval(300, 11000 - 300), false, 15))
-      this.setState({objects: newState})
-    }, 500);
   }
 
   ball = (x, y, isControlled, radius) => {
@@ -48,14 +37,9 @@ class App extends Component {
     return arr;
   }
 
-  randomIntFromInterval(min,max) {
-    return Math.floor(Math.random()*(max-min+1)+min);
-  }
-
   render() {
-    console.log(this.state.objects.length)
     return (
-      <MainLayout objects={this.state.objects}/>
+      <MainLayout/>
     )
   }
 }

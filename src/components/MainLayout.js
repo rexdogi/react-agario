@@ -2,7 +2,7 @@
  * Created by Paulius on 5/8/2017.
  */
 import React, {Component} from 'react';
-import Node from './Node'
+import io from 'socket.io-client';
 
 export default class MainLayout extends Component {
 
@@ -11,7 +11,7 @@ export default class MainLayout extends Component {
     this.state = {
       width: 11000,
       height: 11000,
-      objects: this.props.objects
+      objects: [this.ball(500, 500, true, 30)]
     }
     this.loop = this.loop.bind(this);
   }
@@ -20,22 +20,23 @@ export default class MainLayout extends Component {
     this.setState({objects: props.objects})
   }
 
+  drawObject = (ctx, x, y, radius) => {
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.fillStyle = 'blue';
+    ctx.fill();
+  }
+
   ball = (x, y, isControlled, radius) => {
     return {
-      isControlled: isControlled,
+      isPlayer: isControlled,
       x: x,
       y: y,
       dx: 0,
       dy: 0,
       radius: radius,
       color: 'blue',
-      draw: (ctx, x, y, radius) => {
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2, true);
-        ctx.closePath();
-        ctx.fillStyle = 'blue';
-        ctx.fill();
-      }
     };
   }
 
@@ -50,8 +51,21 @@ export default class MainLayout extends Component {
     this.frameId = window.requestAnimationFrame( this.loop )
   }
 
+
+  randomIntFromInterval(min,max) {
+    return Math.floor(Math.random()*(max-min+1)+min);
+  }
+
   componentDidMount() {
-    this.setState({ctx: this.refs.ctx.getContext("2d"), objects: this.props.objects}, () => {
+    let socket = io('http://localhost:8080/');
+    socket.emit('lul', function(data) {
+      console.log(data);
+    });
+    socket.on('update', (data) => {
+      this.setState({objects: data})
+    })
+    this.setState({ctx: this.refs.ctx.getContext("2d"), socket: socket}, () => {
+      this.state.socket.emit('lul');
       this.startLoop();
     });
   }
@@ -75,8 +89,9 @@ export default class MainLayout extends Component {
   }
 
   move(e) {
-    let newState = this.state.objects.map((item) => {
-      if(item.isControlled === true) {
+    this.state.objects.map((item) => {
+      if(item.id === this.state.socket.id) {
+        console.log("moving");
         const angle = Math.cos(this.getAngle(item.x, item.y, e.pageX, e.pageY) * (Math.PI / 180));
         const angle2 = Math.sin(this.getAngle(item.x, item.y, e.pageX, e.pageY) * (Math.PI / 180));
         let distanceX = Math.abs(e.pageX - item.x);
@@ -84,11 +99,9 @@ export default class MainLayout extends Component {
         let dx, dy;
         dx = angle * this.getVelocity(distanceX * 2.5);
         dy = angle2 * this.getVelocity(distanceY * 2.5);
-        return {...item, dx: dx, dy: dy}
+        this.state.socket.emit('update', {x: dx, y: dy, id: this.state.socket.id});
       }
-      return item;
     })
-    this.setState({objects: newState});
   }
 
   getAngle(x1, y1, x2, y2) {
@@ -99,7 +112,7 @@ export default class MainLayout extends Component {
   draw(ctx) {
     this.clear(this.state.ctx);
     this.state.objects.map((item, i) => {
-      if(item.isControlled === true) {
+      if(item.id === this.state.socket.id) {
         let posX, posY = 0;
         if ((item.x + item.dx) <= this.state.width - 300 && item.x + item.dx >= 300) {
           posX = item.x + item.dx
@@ -112,18 +125,12 @@ export default class MainLayout extends Component {
         } else {
           posY = item.y;
         }
-        let newState = this.state.objects.map((newItem, index) => {
-          if (i !== index) {
-            return newItem;
-          }
-          return {...newItem, x: posX, y: posY}
-        })
-        this.setState({objects: newState})
-        if (item.isControlled === true) {
+
+        if (item.isPlayer === true) {
           window.scrollTo(item.x - window.innerWidth / 2, item.y - window.innerHeight / 2)
         }
       }
-      item.draw(ctx, item.x, item.y, item.radius);
+      this.drawObject(ctx, item.x, item.y, item.radius);
     })
 
   }
